@@ -1,0 +1,18 @@
+{
+  "short_name": "rnm",
+  "name": "rnm (readnmove)",
+  "description": "rnm (readnmove) adalah aplikasi pencatatan premium berbasis Liquid Glass Design Language untuk melacak catatan olahraga (fisik) dan olah otak (mental).",
+  "icons": [
+    {
+      "src": "icon.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#0A192F",
+  "theme_color": "#0A192F",
+  "display": "standalone",
+  "orientation": "portrait"
+}

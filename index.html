@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>rnm (readnmove) - Balans Fisik & Mental</title>
+  <meta name="description" content="rnm (readnmove) adalah aplikasi pencatatan premium berbasis Liquid Glass Design Language untuk melacak catatan olahraga (fisik) dan olah otak (mental).">
+  
+  <!-- Manifest & PWA Configuration -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0A192F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon.jpg">
+  <link rel="icon" href="icon.jpg" type="image/jpeg">
+  <link rel="shortcut icon" href="icon.jpg" type="image/jpeg">
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Layer 0 -->
+  <div id="base-bg-gradient" class="bg-gradient"></div>
+
+  <!-- Main Device Frame (Wraps mockup on Desktop, full-width on Mobile) -->
+  <div id="device-wrapper">
+    <div id="device-bezel">
+      
+      <!-- Top Speaker Bezel Indicator (Dynamic Island visual) -->
+      <div id="dynamic-island"></div>
+
+      <!-- Main Application Container -->
+      <main id="app-container">
+        
+        <!-- ==================== MAIN HOME VIEW (SPLIT SCREEN) ==================== -->
+        <section id="main-home-view" class="view-screen active">
+          
+          <!-- Header Bar -->
+          <header class="app-header">
+            <h1 class="brand-title">rnm</h1>
+          </header>
+          
+          <!-- Split Workspaces -->
+          <div id="split-workspaces">
+            
+            <!-- Left Workspace (Olah Otak / Mental Notebook) -->
+            <section id="mental-workspace" class="workspace-panel">
+              <div class="workspace-header">
+                <h2>olah otak</h2>
+                <span class="workspace-subtitle">Brainstorm & Refleksi</span>
+              </div>
+              
+              <!-- Notes List -->
+              <div id="mental-notes-list" class="notes-scroll-area">
+                <!-- Dynamically generated via JS -->
+              </div>
+            </section>
+            
+            <!-- Center Vertical Divider & Deadpool Badge -->
+            <div id="center-divider">
+              <div id="deadpool-badge" class="interactive" title="Pembatas rnm">
+                <img src="icon.jpg" alt="Deadpool Separator Logo" id="deadpool-image">
+              </div>
+            </div>
+            
+            <!-- Right Workspace (Olahraga / Physical Notebook) -->
+            <section id="physical-workspace" class="workspace-panel">
+              <div class="workspace-header">
+                <h2>olahraga</h2>
+                <span class="workspace-subtitle">Fisik & Latihan</span>
+              </div>
+              
+              <!-- Notes List -->
+              <div id="physical-notes-list" class="notes-scroll-area">
+                <!-- Dynamically generated via JS -->
+              </div>
+            </section>
+            
+          </div>
+          
+        </section>
+
+        <!-- ==================== SUB-PAGES VIEW CONTAINER ==================== -->
+        <section id="sub-pages-view" class="view-screen">
+          
+          <!-- Sub-page Navigation Header -->
+          <header class="sub-header glass-element">
+            <button id="btn-back-to-home" class="interactive" aria-label="Kembali ke halaman utama">
+              <!-- SVG Left Arrow -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="svg-back-arrow">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h2 id="sub-page-title">Budgeting</h2>
+            <div style="width: 44px;"></div> <!-- Spacer for optical centering -->
+          </header>
+          
+          <!-- Sub-page content slots -->
+          <div id="sub-pages-scroller">
+            
+            <!-- SUB-PAGE 1: BUDGETING -->
+            <article id="sub-page-budget" class="sub-page-content active">
+              
+              <!-- Total Balance Card -->
+              <section class="glass-card balance-card">
+                <span class="card-label">Sisa Anggaran</span>
+                <h3 id="budget-total-balance">Rp 0</h3>
+                <div class="balance-split">
+                  <div>
+                    <span class="split-label">Pemasukan</span>
+                    <span id="budget-income-total" class="split-value positive">+Rp 0</span>
+                  </div>
+                  <div class="divider-v"></div>
+                  <div>
+                    <span class="split-label">Pengeluaran</span>
+                    <span id="budget-expense-total" class="split-value negative">-Rp 0</span>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Transaction Input -->
+              <section class="glass-card transaction-form">
+                <h4>Transaksi Baru</h4>
+                <div class="input-row">
+                  <input type="text" id="tx-description" placeholder="Nama pengeluaran / pemasukan..." maxlength="30">
+                </div>
+                <div class="input-row-half">
+                  <input type="number" id="tx-amount" placeholder="Jumlah (Rp)...">
+                  <select id="tx-type">
+                    <option value="expense">Pengeluaran</option>
+                    <option value="income">Pemasukan</option>
+                  </select>
+                </div>
+                <button id="btn-add-transaction" class="btn-primary interactive">Catat Transaksi</button>
+              </section>
+
+              <!-- Transactions History -->
+              <section class="glass-card transactions-history">
+                <h4>Riwayat Aliran Dana</h4>
+                <div id="transactions-list" class="transactions-list-scroll">
+                  <!-- Generated via JS -->
+                </div>
+              </section>
+              
+            </article>
+
+            <!-- SUB-PAGE 2: ACTIVITY TRACKING -->
+            <article id="sub-page-tracker" class="sub-page-content">
+              
+              <!-- Progress Habit Tracker Cards -->
+              <section class="glass-card tracking-summary">
+                <span class="card-label">Kebugaran & Fokus Hari Ini</span>
+                <h3 id="tracking-overall-score">0% Selesai</h3>
+                <p class="card-desc">Menjaga kebiasaan fisik dan mental tetap seimbang setiap hari.</p>
+              </section>
+
+              <!-- Habits Progress Bars List -->
+              <section class="glass-card habits-tracker-list">
+                <h4>Indikator Aktivitas</h4>
+                
+                <div id="habits-container">
+                  <!-- Generated via JS -->
+                </div>
+              </section>
+              
+            </article>
+
+            <!-- SUB-PAGE 3: COMPLETED NOTES -->
+            <article id="sub-page-completed" class="sub-page-content">
+              
+              <section class="glass-card completed-summary">
+                <span class="card-label">Arsip Produktivitas</span>
+                <h3 id="completed-notes-count">0 Catatan</h3>
+                <p class="card-desc">Semua catatan olahraga dan ide olah otak yang telah diselesaikan.</p>
+              </section>
+
+              <!-- Two-Folder Navigation for Archive -->
+              <div class="archive-folders-container">
+                <button id="btn-folder-mental" class="archive-folder-btn active interactive" aria-label="Folder Arsip Olah Otak">
+                  <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Olah Otak</span>
+                </button>
+                <button id="btn-folder-physical" class="archive-folder-btn interactive" aria-label="Folder Arsip Olahraga">
+                  <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Olahraga</span>
+                </button>
+              </div>
+
+              <!-- Archive Notes List -->
+              <div id="completed-notes-list" class="completed-notes-scroll">
+                <!-- Generated via JS -->
+              </div>
+              
+            </article>
+            
+          </div>
+          
+        </section>
+
+        <!-- ==================== NOTE INPUT SHEET MODAL ==================== -->
+        <dialog id="note-modal" class="glass-dialog">
+          <div class="dialog-content">
+            <h3 id="modal-title">Catatan Baru</h3>
+            
+            <!-- Category Decision Buttons inside Modal -->
+            <div class="modal-category-select">
+              <button type="button" id="btn-select-mental" class="btn-category-toggle active interactive">Olah Otak</button>
+              <button type="button" id="btn-select-physical" class="btn-category-toggle interactive">Olahraga</button>
+            </div>
+
+            <input type="text" id="note-input-title" placeholder="Judul catatan..." maxlength="40">
+            <textarea id="note-input-body" placeholder="Tulis isi catatan Anda di sini..." rows="4"></textarea>
+            <div class="dialog-actions">
+              <button id="btn-modal-cancel" class="btn-secondary interactive">Batal</button>
+              <button id="btn-modal-save" class="btn-primary interactive">Simpan</button>
+            </div>
+          </div>
+        </dialog>
+
+        <!-- Bottom Floating Navigation Glass Bar (Global) -->
+        <nav id="bottom-tab-bar" class="glass-bar">
+          <button id="tab-budget" class="tab-button interactive" aria-label="Menu Anggaran">
+            <!-- SVG Budget (Money Bag) -->
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span class="tab-label">Budget</span>
+          </button>
+          
+          <button id="tab-tracker" class="tab-button interactive" aria-label="Menu Pelacak Aktivitas">
+            <!-- SVG Activity (Line Chart) -->
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            <span class="tab-label">Activity</span>
+          </button>
+          
+          <button id="tab-completed" class="tab-button interactive" aria-label="Menu Catatan Selesai">
+            <!-- SVG Folder / Completed Documents -->
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <path d="m9 14 2 2 4-4"/>
+            </svg>
+            <span class="tab-label">Completed</span>
+          </button>
+        </nav>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Script logic -->
+  <script src="app.js"></script>
+  
+  <!-- Register Service Worker for PWA installation capability -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registered successfully.', reg))
+          .catch(err => console.log('Service Worker registration failed.', err));
+      });
+    }
+  </script>
+
+</body>
+</html>

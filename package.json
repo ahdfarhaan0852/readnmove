@@ -1,0 +1,9 @@
+{
+  "name": "rnm",
+  "version": "1.0.0",
+  "description": "rnm (readnmove) Progressive Web App",
+  "scripts": {
+    "dev": "npx http-server -p 8000",
+    "start": "npx http-server -p 8000"
+  }
+}

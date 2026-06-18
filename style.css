@@ -1,0 +1,1361 @@
+/* ==========================================================================
+   DUALSPHERE NOTES - STYLING AND LIQUID GLASS DESIGN SYSTEM
+   ========================================================================== */
+
+/* 1. CSS VARIABLES & DESIGN TOKENS */
+:root {
+  --font-title: 'Lora', serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-handwritten: 'Shadows Into Light', cursive;
+  
+  /* Color Palette */
+  --bg-deep-sapphire: #0A192F;
+  --bg-light-ice: #E2F1FF;
+  --color-highlight: #007AFF;
+  --color-highlight-glow: rgba(0, 122, 255, 0.4);
+  
+  /* Text Contrast - WCAG 2.1 Compliant */
+  --text-dark-bg-primary: #FFFFFF;
+  --text-dark-bg-secondary: #A2B0C7; /* Brighter slate-blue for dark mode readability */
+  --text-light-bg-primary: #0A192F; /* Deep navy */
+  --text-light-bg-secondary: #3A4D68; /* Darker slate-blue for light mode readability */
+  
+  /* Glass Material Specs */
+  --glass-blur: blur(24px) saturate(180%);
+  --glass-shadow: 0 10px 40px -10px rgba(0, 3, 15, 0.3);
+  --glass-border-light: 1px solid rgba(255, 255, 255, 0.35);
+  --glass-border-dark: 1px solid rgba(10, 25, 47, 0.25);
+  
+  /* Geometry Concentricity */
+  --radius-bezel: 42px;
+  --radius-card: 24px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+  
+  /* Layout Dimensions */
+  --device-w: 393px; /* iPhone 15 standard */
+  --device-h: 852px;
+}
+
+/* Reset and Global Settings */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-deep-sapphire);
+  color: var(--text-dark-bg-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* 2. BASE BACKGROUND GRADIENT (Layer 0) */
+.bg-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(145deg, var(--bg-deep-sapphire) 0%, #0d2847 45%, #a1c7eb 80%, var(--bg-light-ice) 100%);
+  background-size: 200% 200%;
+  animation: dynamicBg 20s ease infinite;
+  z-index: -1;
+}
+
+@keyframes dynamicBg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 3. DEVICE CONTAINER FRAME (iPhone Bezel Simulation for Desktop) */
+#device-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: var(--device-w);
+  height: 100vh;
+  max-height: var(--device-h);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+@media (min-width: 480px) {
+  #device-bezel {
+    width: var(--device-w);
+    height: var(--device-h);
+    border: 12px solid rgba(22, 28, 45, 0.95);
+    border-radius: var(--radius-bezel);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.7),
+      inset 0 0 4px 2px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+  }
+  
+  /* Dynamic Island Notch */
+  #dynamic-island {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.95);
+    border-radius: 20px;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: inset 0 0 1px 1px rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (max-width: 479px) {
+  body {
+    padding: 0;
+  }
+  #device-wrapper {
+    max-height: 100vh;
+    max-width: 100%;
+  }
+  #device-bezel {
+    width: 100%;
+    height: 100vh;
+    border: none;
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  #dynamic-island {
+    display: none;
+  }
+}
+
+/* 4. MAIN APP SHELL */
+#app-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 5. VIEW SCREEN ROUTER SYSTEM (Horizontal Swipe System) */
+.view-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+#main-home-view {
+  transform: translateX(0);
+  z-index: 10;
+}
+
+#main-home-view:not(.active) {
+  transform: translateX(-35%); /* parallax shift behind sub-pages */
+}
+
+#sub-pages-view {
+  transform: translateX(100%); /* start off-screen right */
+  z-index: 20;
+}
+
+#sub-pages-view.active {
+  transform: translateX(0);
+}
+
+/* 6. MAIN HOME VIEW & VERTICAL SPLIT */
+.app-header {
+  padding: 50px 20px 10px 20px;
+  text-align: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.brand-title {
+  font-family: var(--font-title);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 30%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 12px rgba(10, 25, 47, 0.3);
+}
+
+#split-workspaces {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  --split-percent: 50;
+  touch-action: pan-y; /* Block native horizontal page swipes/bounces */
+}
+
+/* Panels (Mental vs Physical) */
+.workspace-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 100px 14px 105px 14px; /* margins for header and footer */
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1), padding 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+  position: relative;
+  overflow: hidden; /* Prevent text spilling when narrow */
+  flex-shrink: 0; /* Force flexbox to obey width properties */
+  touch-action: pan-y; /* Block native horizontal page swipes/bounces */
+}
+
+/* Smooth fade transitions for workspace contents during collapse */
+.workspace-panel > * {
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Expanded workspace panel style to fill screen when snapped */
+.workspace-panel.expanded {
+  width: 100% !important;
+}
+
+/* Collapsed workspace panel style */
+.workspace-panel.collapsed {
+  width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border: none !important;
+}
+
+.workspace-panel.collapsed > * {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.9); /* Subtle shrinking effect */
+}
+
+#mental-workspace {
+  width: calc(var(--split-percent, 50) * 1%); /* Explicitly define in ID selector using unitless multiply */
+  padding-left: calc(min(14px, calc(var(--split-percent, 50) * 1%)));
+  padding-right: calc(min(14px, calc(var(--split-percent, 50) * 1%)));
+  background-color: rgba(10, 25, 47, 0.65); /* Increased opacity for richer glass look and better text contrast */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+#physical-workspace {
+  width: calc(100% - calc(var(--split-percent, 50) * 1%)); /* Explicitly define in ID selector using unitless multiply */
+  padding-left: calc(min(14px, calc(100% - calc(var(--split-percent, 50) * 1%))));
+  padding-right: calc(min(14px, calc(100% - calc(var(--split-percent, 50) * 1%))));
+  background-color: rgba(226, 241, 255, 0.82); /* Much higher opacity to block dark bg and provide true light-bg contrast */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--text-light-bg-primary); /* Ensure all default text inside inherits dark color */
+}
+
+/* Dynamically fade contents near the edges to prevent layout bleeding and touchstart pops - uses unitless arithmetic for browser compatibility */
+#mental-workspace > * {
+  opacity: calc((var(--split-percent, 50) - 15) / 20);
+}
+
+#physical-workspace > * {
+  opacity: calc((85 - var(--split-percent, 50)) / 20);
+}
+
+/* Grabbing state disables width transition for real-time responsiveness */
+#split-workspaces.dragging-active #mental-workspace,
+#split-workspaces.dragging-active #physical-workspace,
+#split-workspaces.dragging-active #center-divider {
+  transition: none !important;
+}
+
+#mental-workspace .workspace-header h2 {
+  color: var(--text-dark-bg-primary);
+}
+
+#mental-workspace .workspace-header .workspace-subtitle {
+  color: var(--text-dark-bg-secondary);
+}
+
+#physical-workspace .workspace-header h2 {
+  color: var(--text-light-bg-primary);
+}
+
+#physical-workspace .workspace-header .workspace-subtitle {
+  color: var(--text-light-bg-secondary);
+}
+
+/* Headers */
+.workspace-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.workspace-header h2 {
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: -0.3px;
+  margin-bottom: 3px;
+}
+
+.workspace-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  display: block;
+}
+
+/* Scroll Areas for Notes */
+.notes-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
+  margin-bottom: 12px;
+  scrollbar-width: none; /* Hide scrollbars */
+  display: grid;
+  grid-template-columns: 1fr; /* 1 column by default */
+  gap: 12px;
+  align-content: start;
+}
+
+.notes-scroll-area::-webkit-scrollbar {
+  display: none;
+}
+
+/* Grid layout updates when workspace panel is expanded (width > 70%) */
+.workspace-panel.expanded .notes-scroll-area {
+  grid-template-columns: repeat(2, 1fr); /* 2 columns when expanded! */
+}
+
+/* Note Cards Styling */
+.note-item-card {
+  padding: 14px;
+  border-radius: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: cardFadeIn 0.4s ease forwards;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Scattered / Unarranged sticky-note effect when workspace is expanded */
+.workspace-panel.expanded .note-item-card:nth-child(odd) {
+  transform: rotate(-3deg) translateX(-4px) translateY(5px);
+}
+.workspace-panel.expanded .note-item-card:nth-child(even) {
+  transform: rotate(2.5deg) translateX(6px) translateY(-4px);
+}
+.workspace-panel.expanded .note-item-card:nth-child(3n) {
+  transform: rotate(4deg) translateX(-8px) translateY(8px);
+}
+.workspace-panel.expanded .note-item-card:nth-child(3n+1) {
+  transform: rotate(-3.5deg) translateX(8px) translateY(-6px);
+}
+.workspace-panel.expanded .note-item-card:nth-child(4n) {
+  transform: rotate(-1.8deg) translateX(-2px) translateY(3px);
+}
+.workspace-panel.expanded .note-item-card:nth-child(4n+2) {
+  transform: rotate(3.2deg) translateX(4px) translateY(-5px);
+}
+
+/* Straighten and lift card on hover */
+.workspace-panel.expanded .note-item-card:hover {
+  transform: rotate(0deg) scale(1.05) translateY(-5px) !important;
+  z-index: 20;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Notes specific to Left (Mental) Card styling */
+#mental-workspace .note-item-card {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dark-bg-primary);
+}
+
+#mental-workspace .note-item-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#mental-workspace .note-item-card .note-title {
+  color: var(--text-dark-bg-primary);
+}
+
+#mental-workspace .note-item-card .note-body {
+  color: var(--text-dark-bg-secondary);
+}
+
+/* Notes specific to Right (Physical) Card styling */
+#physical-workspace .note-item-card {
+  background: rgba(255, 255, 255, 0.45); /* Premium light frosted white card */
+  color: var(--text-light-bg-primary);
+  border: 1px solid rgba(10, 25, 47, 0.1); /* Subtle dark border for crisp separation */
+}
+
+#physical-workspace .note-item-card:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(10, 25, 47, 0.15);
+}
+
+#physical-workspace .note-item-card .note-title {
+  color: var(--text-light-bg-primary);
+}
+
+#physical-workspace .note-item-card .note-body {
+  color: var(--text-light-bg-secondary);
+}
+
+/* Title and Body text inside Note Cards */
+.note-title {
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.note-body {
+  font-family: var(--font-handwritten);
+  font-size: 16px; /* slightly bigger since Shadows Into Light is a thin handwriting font */
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Card Control Actions (Check off, delete) */
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-card-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+#mental-workspace .btn-card-action {
+  color: var(--text-dark-bg-secondary);
+}
+
+#mental-workspace .btn-card-action:hover {
+  color: var(--text-dark-bg-primary);
+  background-color: rgba(255,255,255,0.08);
+}
+
+#physical-workspace .btn-card-action {
+  color: var(--text-light-bg-secondary);
+}
+
+#physical-workspace .btn-card-action:hover {
+  color: var(--text-light-bg-primary);
+  background-color: rgba(10,25,47,0.08);
+}
+
+.btn-card-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Button to add new notes (+ Tulis Note) */
+.btn-add-note {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-button);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#mental-workspace .btn-add-note {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dark-bg-primary);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+#mental-workspace .btn-add-note:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#physical-workspace .btn-add-note {
+  background: rgba(255, 255, 255, 0.5); /* Matching light frosted button */
+  color: var(--text-light-bg-primary);
+  border: 1px solid rgba(10, 25, 47, 0.12);
+}
+
+#physical-workspace .btn-add-note:hover {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(10, 25, 47, 0.20);
+}
+
+.svg-icon-plus {
+  width: 14px;
+  height: 14px;
+}
+
+/* Empty Workspace State text */
+.empty-state-text {
+  text-align: center;
+  font-size: 12px;
+  padding: 40px 10px;
+  opacity: 0.6;
+}
+
+/* ==================== CENTER DIVIDER & DEADPOOL ICON ==================== */
+#center-divider {
+  position: absolute;
+  left: calc(var(--split-percent, 50) * 1%);
+  top: 0;
+  width: 24px; /* Broad hover/drag hitbox */
+  height: 100%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: auto; /* Allow interaction */
+  cursor: ew-resize;
+  display: flex;
+  justify-content: center;
+  transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#center-divider::before {
+  content: '';
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.3) 15%, 
+    rgba(255, 255, 255, 0.3) 85%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+#deadpool-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 110px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  z-index: 110;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 50%; /* Clip any square white background corners */
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+#deadpool-badge:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+#deadpool-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Fill the circle fully */
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* ==================== BOTTOM FLOATING NAV BAR ==================== */
+#bottom-tab-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 16px;
+  right: 16px;
+  height: 66px;
+  border-radius: var(--radius-bezel);
+  background: rgba(10, 25, 47, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+  z-index: 100;
+}
+
+.tab-button {
+  background: none;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  flex: 1;
+  height: 50px;
+  border-radius: var(--radius-button);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tab-button:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.active {
+  color: #ffffff;
+  background: rgba(0, 122, 255, 0.15); /* Translucent blue glass */
+  border: 1px solid rgba(0, 122, 255, 0.35); /* Glowing blue glass border */
+  box-shadow: 
+    0 4px 15px rgba(0, 122, 255, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.tab-button.active:hover {
+  color: #ffffff;
+  background: rgba(0, 122, 255, 0.22);
+}
+
+.tab-svg {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tab-button.active .tab-svg {
+  transform: translateY(-2px) scale(1.1);
+  filter: drop-shadow(0 0 5px var(--color-highlight-glow));
+}
+
+.tab-label {
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* ==================== SUB-PAGES CONTAINER ==================== */
+#sub-pages-view {
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  z-index: 20;
+  overflow: hidden; /* Lock horizontal scrolling bounce */
+}
+
+#sub-pages-view.active {
+  transform: translateX(0);
+}
+
+.sub-header {
+  padding: 50px 20px 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10, 25, 47, 0.80); /* Increased opacity to block light background gradient and make text visible */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: relative; /* Changed from absolute */
+  height: 95px;
+  flex-shrink: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+#btn-back-to-home {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#btn-back-to-home:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-highlight);
+}
+
+.svg-back-arrow {
+  width: 18px;
+  height: 18px;
+}
+
+#sub-page-title {
+  font-family: var(--font-title);
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Subtle text shadow for background independence */
+}
+
+#sub-pages-scroller {
+  flex: 1;
+  width: 300%; /* holds 3 pages side-by-side */
+  display: flex;
+  margin-top: 0; /* Changed from 95px */
+  overflow: hidden;
+  position: relative;
+  background: rgba(10, 25, 47, 0.78); /* Increased opacity to block light background gradient and make text visible */
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  touch-action: pan-y; /* Lock touch swipe to only vertical scrolls */
+}
+
+.sub-page-content {
+  width: 33.333%; /* exact layout size of 1 screen */
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 16px 100px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  touch-action: pan-y; /* Lock touch swipe to only vertical scrolls */
+}
+
+.sub-page-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dynamic shifting logic of sub-page sliding */
+#sub-pages-scroller.page-0 { transform: translateX(0); }
+#sub-pages-scroller.page-1 { transform: translateX(-33.3333%); }
+#sub-pages-scroller.page-2 { transform: translateX(-66.6666%); }
+
+/* Glass Cards UI elements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dark-bg-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--text-dark-bg-secondary);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+/* A. BUDGETING PAGE UI */
+.balance-card {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.balance-card h3 {
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 15px;
+}
+
+.balance-split {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.balance-split > div {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.split-label {
+  font-size: 10px;
+  color: var(--text-dark-bg-secondary);
+  margin-bottom: 4px;
+}
+
+.split-value {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.split-value.positive { color: #82C99B; }
+.split-value.negative { color: #E88E88; }
+
+.divider-v {
+  width: 1px;
+  height: 30px;
+  background-color: rgba(255,255,255,0.15);
+}
+
+/* Budget Form Inputs */
+.transaction-form h4, .transactions-history h4, .habits-tracker-list h4 {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow for readability */
+}
+
+.input-row {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.input-row-half {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+input[type="text"], input[type="number"], select, textarea {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-input);
+  color: #ffffff;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-highlight);
+}
+
+select {
+  cursor: pointer;
+}
+
+select option {
+  background-color: var(--bg-deep-sapphire);
+  color: #ffffff;
+}
+
+.btn-primary {
+  background: var(--color-highlight);
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: var(--radius-button);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn-primary:hover {
+  background-color: #0062cc;
+  box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
+}
+
+/* Transactions list ledger styling */
+.transactions-list-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.transactions-list-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.tx-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-desc {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tx-date {
+  font-size: 10px;
+  color: var(--text-dark-bg-secondary);
+}
+
+.tx-val {
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tx-val.income { color: #82C99B; }
+.tx-val.expense { color: #E88E88; }
+
+/* B. TRACKING ACTIVITY PAGE UI */
+.tracking-summary h3 {
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.habit-bar-item {
+  margin-bottom: 18px;
+}
+
+.habit-bar-item:last-child {
+  margin-bottom: 0;
+}
+
+.habit-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.habit-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.habit-progress-val {
+  font-size: 12px;
+  font-weight: 700;
+  color: #78AFFF; /* Softer blue */
+}
+
+.bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5C9CFF 0%, #8FE3FF 100%); /* Softer HSL-based gradient */
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Habit tap interactions */
+.btn-habit-plus {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-habit-plus:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* C. COMPLETED NOTES PAGE UI */
+.completed-summary h3 {
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 800;
+  color: #82C99B; /* Softer green */
+}
+
+.completed-notes-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.completed-item-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s, background-color 0.3s;
+}
+
+/* Scattered / Unarranged sticky-note effect in archive */
+.completed-item-card:nth-child(odd) {
+  transform: rotate(-1.2deg) translateY(1px);
+}
+.completed-item-card:nth-child(even) {
+  transform: rotate(1deg) translateY(-1px);
+}
+.completed-item-card:nth-child(3n) {
+  transform: rotate(1.8deg) translateX(1px);
+}
+.completed-item-card:nth-child(3n+1) {
+  transform: rotate(-1.5deg) translateX(-1px);
+}
+
+/* Straighten and lift on hover */
+.completed-item-card:hover {
+  transform: rotate(0deg) scale(1.02) !important;
+  z-index: 10;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.badge-type {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+.badge-type.brain {
+  background: rgba(0, 122, 255, 0.15);
+  color: #78AFFF;
+}
+
+.badge-type.sport {
+  background: rgba(52, 199, 89, 0.15);
+  color: #82C99B;
+}
+
+.completed-card-main {
+  flex: 1;
+}
+
+.completed-card-main .note-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.completed-card-main .note-body {
+  opacity: 0.5;
+}
+
+.checkmark-icon {
+  color: #82C99B; /* Softer green */
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+/* ==================== INTERACTIVE MICRO-INTERACTIONS ==================== */
+.interactive {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s, opacity 0.2s;
+}
+
+.interactive:active {
+  transform: scale(0.95) !important;
+  opacity: 0.85;
+}
+
+/* Shimmer animation utility class */
+.shimmer-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-active::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(45deg);
+  transition: transform 0.5s;
+  animation: shineSweep 1.2s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes shineSweep {
+  0% { transform: translate(-100%, -100%) rotate(45deg); }
+  100% { transform: translate(100%, 100%) rotate(45deg); }
+}
+
+/* ==================== NOTE INPUT SHEET DIALOG (MODAL) ==================== */
+.glass-dialog {
+  border: none;
+  background: transparent;
+  width: calc(100% - 32px);
+  max-width: 350px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  outline: none;
+  z-index: 900;
+}
+
+.glass-dialog::backdrop {
+  background-color: rgba(10, 25, 47, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dialog-content {
+  background: rgba(10, 25, 47, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Category Decision Buttons inside Modal */
+.modal-category-select {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-button);
+  padding: 4px;
+  gap: 4px;
+}
+
+.btn-category-toggle {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn-category-toggle.active {
+  background: var(--color-highlight);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--color-highlight-glow);
+}
+
+.dialog-content h3 {
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.dialog-content textarea {
+  resize: none;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-button);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ==================== REDESIGN CUSTOM OVERRIDES ==================== */
+
+/* Page Budget & Tracking Fonts (Lora) */
+#sub-page-budget, #sub-page-tracker {
+  font-family: var(--font-title) !important;
+}
+
+#sub-page-budget input, 
+#sub-page-budget select, 
+#sub-page-budget button,
+#sub-page-budget span, 
+#sub-page-budget p, 
+#sub-page-budget h3, 
+#sub-page-budget h4,
+#sub-page-tracker button, 
+#sub-page-tracker span, 
+#sub-page-tracker p,
+#sub-page-tracker h3, 
+#sub-page-tracker h4 {
+  font-family: var(--font-title) !important;
+}
+
+/* Modal Add Note Font Styling */
+#note-modal #note-input-title {
+  font-family: var(--font-title);
+}
+
+#note-modal #note-input-body {
+  font-family: var(--font-handwritten);
+  font-size: 16px;
+}
+
+/* Archive Folder Tabs UI */
+.archive-folders-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 6px;
+  margin-bottom: 15px;
+}
+
+.archive-folder-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.archive-folder-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.archive-folder-btn.active {
+  color: #ffffff;
+  background: rgba(0, 122, 255, 0.15); /* Translucent blue glass */
+  border: 1px solid rgba(0, 122, 255, 0.35); /* Glowing blue glass border */
+  box-shadow: 
+    0 4px 12px rgba(0, 122, 255, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.folder-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Randomized Fly-In Entrance Animations for Archive Cards */
+@keyframes randomFlyIn1 {
+  from { opacity: 0; transform: translate(-60px, -30px) rotate(-15deg); }
+  to { opacity: 1; }
+}
+@keyframes randomFlyIn2 {
+  from { opacity: 0; transform: translate(60px, 40px) rotate(15deg); }
+  to { opacity: 1; }
+}
+@keyframes randomFlyIn3 {
+  from { opacity: 0; transform: translate(-40px, 50px) rotate(-10deg); }
+  to { opacity: 1; }
+}
+@keyframes randomFlyIn4 {
+  from { opacity: 0; transform: translate(50px, -40px) rotate(12deg); }
+  to { opacity: 1; }
+}
