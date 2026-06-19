@@ -4,6 +4,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Automatic migration / wipe for v2 release to clear mock data
+  const APP_VERSION = '2';
+  const currentSavedVersion = localStorage.getItem('ds_app_version');
+  if (currentSavedVersion !== APP_VERSION) {
+    localStorage.removeItem('ds_mental_notes');
+    localStorage.removeItem('ds_physical_notes');
+    localStorage.removeItem('ds_completed_notes');
+    localStorage.removeItem('ds_water');
+    localStorage.setItem('ds_app_version', APP_VERSION);
+  }
+
   // Helper to get date string offset by N days
   const getDateOffsetString = (daysOffset) => {
     const d = new Date();
