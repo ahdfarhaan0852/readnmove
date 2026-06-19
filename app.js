@@ -4,43 +4,34 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Helper to get date string offset by N days
+  const getDateOffsetString = (daysOffset) => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysOffset);
+    return d.toLocaleDateString();
+  };
+
   // ==================== STATE MANAGEMENT ====================
   let state = {
-    mentalNotes: JSON.parse(localStorage.getItem('ds_mental_notes')) || [
-      { id: 'm1', title: 'Riset Desain Glassmorphism', body: 'Pelajari CSS backdrop-filter blur untuk tampilan antarmuka yang bersih.', date: new Date().toLocaleDateString() },
-      { id: 'm2', title: 'Belajar Pemrograman Swift', body: 'Tonton video tutorial tentang modifier glassEffect dan transisi morphing.', date: new Date().toLocaleDateString() }
-    ],
-    physicalNotes: JSON.parse(localStorage.getItem('ds_physical_notes')) || [
-      { id: 'p1', title: 'Target Lari Pagi', body: 'Lari keliling komplek sejauh 5 km dengan target waktu kurang dari 30 menit.', date: new Date().toLocaleDateString() },
-      { id: 'p2', title: 'Latihan Push Up', body: '3 set x 15 reps push up untuk melatih otot dada dan lengan.', date: new Date().toLocaleDateString() }
-    ],
-    completedNotes: JSON.parse(localStorage.getItem('ds_completed_notes')) || [
-      { id: 'c1', type: 'brain', title: 'Evaluasi Ide Bisnis', body: 'Menyusun analisis SWOT awal untuk ide aplikasi pencatatan.', date: new Date().toLocaleDateString() },
-      { id: 'c2', type: 'sport', title: 'Berenang Sore', body: '400 meter latihan gaya dada untuk melatih pernapasan.', date: new Date().toLocaleDateString() }
-    ],
-    transactions: JSON.parse(localStorage.getItem('ds_transactions')) || [
-      { id: 't1', description: 'Beli Sepatu Lari', amount: 450000, type: 'expense', date: new Date().toLocaleDateString() },
-      { id: 't2', description: 'Gaji Bulanan', amount: 3500000, type: 'income', date: new Date().toLocaleDateString() },
-      { id: 't3', description: 'Suplemen Protein', amount: 150000, type: 'expense', date: new Date().toLocaleDateString() }
-    ],
-    habits: JSON.parse(localStorage.getItem('ds_habits')) || [
-      { id: 'h1', name: 'Olahraga (Menit)', current: 30, target: 60 },
-      { id: 'h2', name: 'Konsumsi Air (Gelas)', current: 5, target: 8 },
-      { id: 'h3', name: 'Membaca Buku (Halaman)', current: 10, target: 20 },
-      { id: 'h4', name: 'Meditasi/Refleksi (Menit)', current: 5, target: 15 }
-    ],
+    mentalNotes: JSON.parse(localStorage.getItem('ds_mental_notes')) || [],
+    physicalNotes: JSON.parse(localStorage.getItem('ds_physical_notes')) || [],
+    completedNotes: JSON.parse(localStorage.getItem('ds_completed_notes')) || [],
+    water: JSON.parse(localStorage.getItem('ds_water')) || {
+      current: 0,
+      target: 2000
+    },
     currentNoteType: 'mental' // Tracks which workspace triggers the input modal
   };
 
   let currentArchiveFolder = 'mental'; // Tracks active folder in completed notes archive ('mental' or 'physical')
+  let activeChartView = 'weekly'; // 'weekly' or 'monthly' for line chart
 
   // Helper to save state to LocalStorage
   const saveState = () => {
     localStorage.setItem('ds_mental_notes', JSON.stringify(state.mentalNotes));
     localStorage.setItem('ds_physical_notes', JSON.stringify(state.physicalNotes));
     localStorage.setItem('ds_completed_notes', JSON.stringify(state.completedNotes));
-    localStorage.setItem('ds_transactions', JSON.stringify(state.transactions));
-    localStorage.setItem('ds_habits', JSON.stringify(state.habits));
+    localStorage.setItem('ds_water', JSON.stringify(state.water));
   };
 
   // ==================== DOM ELEMENTS ====================
@@ -67,13 +58,35 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Tab Buttons
   const tabButtons = {
-    budget: document.getElementById('tab-budget'),
+    water: document.getElementById('tab-water'),
     tracker: document.getElementById('tab-tracker'),
     completed: document.getElementById('tab-completed')
   };
 
   const btnFolderMental = document.getElementById('btn-folder-mental');
   const btnFolderPhysical = document.getElementById('btn-folder-physical');
+
+  // Real-time Date Header
+  const realtimeDateEl = document.getElementById('realtime-date');
+  const updateRealTimeDate = () => {
+    const now = new Date();
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    realtimeDateEl.innerText = now.toLocaleDateString('id-ID', options);
+  };
+  updateRealTimeDate();
+  setInterval(updateRealTimeDate, 1000);
+
+  // Water Tracker DOM Elements
+  const waterProgressText = document.getElementById('water-progress-text');
+  const waterPercentDesc = document.getElementById('water-percent-desc');
+  const waterGlassFill = document.getElementById('water-glass-fill');
+  const btnAdd250 = document.getElementById('btn-add-250');
+  const btnAdd600 = document.getElementById('btn-add-600');
+  const btnResetWater = document.getElementById('btn-reset-water');
+
+  // Chart Toggle Switchers
+  const btnToggleWeekly = document.getElementById('btn-toggle-weekly');
+  const btnToggleMonthly = document.getElementById('btn-toggle-monthly');
 
   // ==================== RENDERING LOGIC ====================
 
@@ -189,81 +202,241 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // 3. Render Budget Transactions & Totals
-  const renderBudget = () => {
-    let incomeTotal = 0;
-    let expenseTotal = 0;
+  // 3. Render Water Hydration Tracker
+  const renderWater = () => {
+    waterProgressText.innerText = `${state.water.current} / ${state.water.target} ml`;
     
-    transactionsList.innerHTML = '';
+    const percent = Math.min(Math.round((state.water.current / state.water.target) * 100), 100);
     
-    // Sort transactions by newest first (reverse order)
-    const sortedTx = [...state.transactions].reverse();
+    if (state.water.current >= state.water.target) {
+      waterPercentDesc.innerHTML = `Selamat! Target asupan air harian Anda terpenuhi (${percent}%).`;
+      waterPercentDesc.style.color = '#82C99B';
+    } else {
+      waterPercentDesc.innerHTML = `Tercapai ${percent}% dari target harian Anda. Tetap terhidrasi!`;
+      waterPercentDesc.style.color = '';
+    }
     
-    sortedTx.forEach(tx => {
-      const val = parseFloat(tx.amount);
-      if (tx.type === 'income') {
-        incomeTotal += val;
-      } else {
-        expenseTotal += val;
-      }
-      
-      const item = document.createElement('div');
-      item.className = 'transaction-item';
-      
-      const sign = tx.type === 'income' ? '+' : '-';
-      const typeClass = tx.type === 'income' ? 'income' : 'expense';
-      
-      item.innerHTML = `
-        <div class="tx-info">
-          <span class="tx-desc">${escapeHTML(tx.description)}</span>
-          <span class="tx-date">${tx.date}</span>
-        </div>
-        <span class="tx-val ${typeClass}">${sign}Rp ${formatNumber(val)}</span>
-      `;
-      transactionsList.appendChild(item);
-    });
-
-    const balanceTotal = incomeTotal - expenseTotal;
-    
-    document.getElementById('budget-total-balance').innerText = `Rp ${formatNumber(balanceTotal)}`;
-    document.getElementById('budget-income-total').innerText = `+Rp ${formatNumber(incomeTotal)}`;
-    document.getElementById('budget-expense-total').innerText = `-Rp ${formatNumber(expenseTotal)}`;
+    // Update liquid level container height
+    waterGlassFill.style.height = `${percent}%`;
   };
 
-  // 4. Render Activity Tracker (Habits)
-  const renderTracker = () => {
-    habitsContainer.innerHTML = '';
+  // Tooltip Logic for Line Chart
+  let tooltipEl = document.getElementById('chart-tooltip');
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.id = 'chart-tooltip';
+    tooltipEl.className = 'chart-tooltip-bubble';
+    document.body.appendChild(tooltipEl);
+  }
+
+  const showChartTooltip = (e, label, count) => {
+    tooltipEl.innerHTML = `<strong>${label}</strong><br/>${count} Catatan Selesai`;
+    tooltipEl.style.display = 'block';
+    moveChartTooltip(e);
+  };
+
+  const moveChartTooltip = (e) => {
+    tooltipEl.style.left = `${e.pageX}px`;
+    tooltipEl.style.top = `${e.pageY}px`;
+  };
+
+  const hideChartTooltip = () => {
+    tooltipEl.style.display = 'none';
+  };
+
+  // Weekly progress percentage distribution render
+  const renderWeeklyBreakdown = (days) => {
+    const listEl = document.getElementById('weekly-percentages-list');
+    listEl.innerHTML = '';
     
-    let totalProgress = 0;
+    // Group 28 days into 4 weeks
+    const weeks = [
+      { name: 'Minggu 4 (Terbaru)', startIdx: 21, endIdx: 27 },
+      { name: 'Minggu 3', startIdx: 14, endIdx: 20 },
+      { name: 'Minggu 2', startIdx: 7, endIdx: 13 },
+      { name: 'Minggu 1', startIdx: 0, endIdx: 6 }
+    ];
     
-    state.habits.forEach(habit => {
-      const percent = Math.min(Math.round((habit.current / habit.target) * 100), 100);
-      totalProgress += percent;
+    weeks.forEach(wk => {
+      let wkSum = 0;
+      for (let i = wk.startIdx; i <= wk.endIdx; i++) {
+        if (days[i]) wkSum += days[i].count;
+      }
+      
+      const target = 10;
+      const percent = Math.min(Math.round((wkSum / target) * 100), 100);
       
       const item = document.createElement('div');
-      item.className = 'habit-bar-item';
+      item.className = 'weekly-progress-item';
       item.innerHTML = `
-        <div class="habit-meta">
-          <span class="habit-name">${escapeHTML(habit.name)}</span>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <span class="habit-progress-val">${habit.current}/${habit.target} (${percent}%)</span>
-            <button class="btn-habit-plus interactive" data-id="${habit.id}" aria-label="Tambah progress">+1</button>
-          </div>
+        <div class="weekly-meta">
+          <span class="weekly-name">${wk.name}</span>
+          <span class="weekly-percent">${wkSum}/${target} (${percent}%)</span>
         </div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: ${percent}%;"></div>
+        <div class="mini-bar-track">
+          <div class="mini-bar-fill" style="width: ${percent}%;"></div>
         </div>
       `;
-      
-      item.querySelector('.btn-habit-plus').addEventListener('click', () => {
-        incrementHabit(habit.id);
-      });
-      
-      habitsContainer.appendChild(item);
+      listEl.appendChild(item);
     });
+  };
+
+  // 4. Render SVG Line Chart (7-Day / 30-Day Note Activity History)
+  const renderTracker = () => {
+    const activitySvg = document.getElementById('activity-svg');
+    const countDays = activeChartView === 'weekly' ? 7 : 30;
     
-    const overallScore = state.habits.length > 0 ? Math.round(totalProgress / state.habits.length) : 0;
-    document.getElementById('tracking-overall-score').innerText = `${overallScore}% Selesai`;
+    // 1. Generate past N days labels and date references
+    const days = [];
+    const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    for (let i = countDays - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push({
+        dateStr: d.toLocaleDateString(),
+        dayLabel: dayNames[d.getDay()],
+        shortLabel: d.getDate() + ' ' + d.toLocaleDateString('id-ID', { month: 'short' }),
+        count: 0
+      });
+    }
+
+    // 2. Count completed notes matching each date
+    state.completedNotes.forEach(note => {
+      const day = days.find(d => d.dateStr === note.date);
+      if (day) {
+        day.count++;
+      }
+    });
+
+    const totalNotes = days.reduce((sum, d) => sum + d.count, 0);
+    document.getElementById('tracking-overall-score').innerText = `${totalNotes} Catatan Selesai`;
+
+    // 3. Compute SVG coordinates
+    const counts = days.map(d => d.count);
+    let maxCount = Math.max(...counts);
+    if (maxCount === 0) maxCount = 5; // Scaling default
+    
+    const xPadding = 25;
+    const yPadding = 25;
+    const chartW = 300;
+    const chartH = 150;
+    
+    const points = days.map((day, idx) => {
+      const x = xPadding + idx * ((chartW - 2 * xPadding) / (countDays - 1));
+      const y = (chartH - yPadding) - (day.count / maxCount) * (chartH - 2 * yPadding);
+      return { x, y, day };
+    });
+
+    // 4. Clear SVG contents (except defs)
+    const elementsToRemove = activitySvg.querySelectorAll(':not(defs)');
+    elementsToRemove.forEach(el => el.remove());
+
+    // 5. Draw SVG linear gradient definition if missing
+    let defs = activitySvg.querySelector('defs');
+    if (!defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      activitySvg.appendChild(defs);
+    }
+    defs.innerHTML = `
+      <linearGradient id="chart-fill-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#78AFFF" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#78AFFF" stop-opacity="0.0"/>
+      </linearGradient>
+    `;
+
+    // 6. Draw Grid lines (Top, middle, base)
+    const gridY = [yPadding, yPadding + (chartH - 2 * yPadding) / 2, chartH - yPadding];
+    const gridVal = [maxCount, Math.round(maxCount / 2), 0];
+    
+    gridY.forEach((y, idx) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', xPadding);
+      line.setAttribute('y1', y);
+      line.setAttribute('x2', chartW - xPadding);
+      line.setAttribute('y2', y);
+      line.setAttribute('class', 'chart-grid-line');
+      activitySvg.appendChild(line);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', xPadding - 5);
+      text.setAttribute('y', y + 3);
+      text.setAttribute('text-anchor', 'end');
+      text.setAttribute('class', 'chart-grid-text');
+      text.textContent = gridVal[idx];
+      activitySvg.appendChild(text);
+    });
+
+    // 7. Draw Area gradient fill
+    let dFill = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      dFill += ` L ${points[i].x} ${points[i].y}`;
+    }
+    const dStroke = dFill;
+    dFill += ` L ${points[points.length - 1].x} ${chartH - yPadding} L ${points[0].x} ${chartH - yPadding} Z`;
+
+    const pathFill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathFill.setAttribute('d', dFill);
+    pathFill.setAttribute('class', 'chart-line-fill');
+    activitySvg.appendChild(pathFill);
+
+    // 8. Draw Line stroke path
+    const pathStroke = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathStroke.setAttribute('d', dStroke);
+    pathStroke.setAttribute('class', 'chart-line-stroke');
+    activitySvg.appendChild(pathStroke);
+
+    // 9. Draw Point Dots
+    const dotRadius = activeChartView === 'weekly' ? 4.5 : 2;
+    points.forEach((pt, idx) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pt.x);
+      circle.setAttribute('cy', pt.y);
+      circle.setAttribute('r', dotRadius);
+      circle.setAttribute('class', 'chart-point-dot');
+
+      // Tooltip triggers
+      circle.addEventListener('mouseenter', (e) => {
+        showChartTooltip(e, pt.day.shortLabel, pt.day.count);
+      });
+      circle.addEventListener('mousemove', (e) => {
+        moveChartTooltip(e);
+      });
+      circle.addEventListener('mouseleave', () => {
+        hideChartTooltip();
+      });
+      circle.addEventListener('touchstart', (e) => {
+        showChartTooltip(e.touches[0], pt.day.shortLabel, pt.day.count);
+      }, { passive: true });
+
+      activitySvg.appendChild(circle);
+    });
+
+    // 10. Draw X-axis day labels
+    points.forEach((pt, idx) => {
+      let showLabel = false;
+      if (activeChartView === 'weekly') {
+        showLabel = true;
+      } else {
+        if (idx === 0 || idx === 10 || idx === 20 || idx === 29) {
+          showLabel = true;
+        }
+      }
+
+      if (showLabel) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', pt.x);
+        text.setAttribute('y', chartH - 8);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'chart-label-text');
+        text.textContent = activeChartView === 'weekly' ? pt.day.dayLabel : pt.day.shortLabel.split(' ')[0];
+        activitySvg.appendChild(text);
+      }
+    });
+
+    // 11. Render Weekly breakdown card if monthly chart
+    if (activeChartView === 'monthly') {
+      renderWeeklyBreakdown(days);
+    }
   };
 
   // ==================== APP FUNCTIONS ====================
@@ -301,60 +474,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Add Transaction Event
-  document.getElementById('btn-add-transaction').addEventListener('click', () => {
-    const desc = document.getElementById('tx-description').value.trim();
-    const amount = parseFloat(document.getElementById('tx-amount').value);
-    const type = document.getElementById('tx-type').value;
-
-    if (!desc || isNaN(amount) || amount <= 0) {
-      alert('Mohon isi nama deskripsi dan jumlah transaksi dengan benar.');
-      return;
-    }
-
-    state.transactions.push({
-      id: 'tx-' + Date.now(),
-      description: desc,
-      amount: amount,
-      type: type,
-      date: new Date().toLocaleDateString()
-    });
-
+  // Water Tracker Quick Add Listeners
+  btnAdd250.addEventListener('click', () => {
+    state.water.current = Math.min(state.water.current + 250, 5000);
     saveState();
-    renderBudget();
-
-    // Reset Form
-    document.getElementById('tx-description').value = '';
-    document.getElementById('tx-amount').value = '';
-    
-    // Add shimmering flash to balance card
-    const balCard = document.querySelector('.balance-card');
-    triggerShimmer(balCard);
+    renderWater();
+    triggerShimmer(document.querySelector('.water-summary-card'));
   });
 
-  // Increment Habit target progress
-  const incrementHabit = (id) => {
-    const habit = state.habits.find(h => h.id === id);
-    if (habit) {
-      if (habit.current < habit.target) {
-        habit.current += 1;
-        saveState();
-        renderTracker();
-      }
-    }
-  };
+  btnAdd600.addEventListener('click', () => {
+    state.water.current = Math.min(state.water.current + 600, 5000);
+    saveState();
+    renderWater();
+    triggerShimmer(document.querySelector('.water-summary-card'));
+  });
+
+  btnResetWater.addEventListener('click', () => {
+    state.water.current = 0;
+    saveState();
+    renderWater();
+  });
+
+  // Chart Timeframe Switchers Toggle Listeners
+  btnToggleWeekly.addEventListener('click', () => {
+    activeChartView = 'weekly';
+    btnToggleWeekly.classList.add('active');
+    btnToggleMonthly.classList.remove('active');
+    document.getElementById('weekly-distribution-section').style.display = 'none';
+    renderTracker();
+  });
+
+  btnToggleMonthly.addEventListener('click', () => {
+    activeChartView = 'monthly';
+    btnToggleMonthly.classList.add('active');
+    btnToggleWeekly.classList.remove('active');
+    document.getElementById('weekly-distribution-section').style.display = 'block';
+    renderTracker();
+  });
 
   // ==================== GESTURE & NAVIGATION NAVIGATION ====================
 
   // Switch views (Main view vs Sub-pages)
   const navigateToSubPage = (pageIndex) => {
     // Set active page title
-    const titles = ["Budgeting", "Activity Tracking", "Completed Notes"];
+    const titles = ["Hidrasi Air", "Activity Tracking", "Completed Notes"];
     subPageTitle.innerText = titles[pageIndex];
 
     // Remove active styles from all tabs, add to selected tab
     Object.values(tabButtons).forEach(btn => btn.classList.remove('active'));
-    if (pageIndex === 0) tabButtons.budget.classList.add('active');
+    if (pageIndex === 0) tabButtons.water.classList.add('active');
     if (pageIndex === 1) tabButtons.tracker.classList.add('active');
     if (pageIndex === 2) tabButtons.completed.classList.add('active');
 
@@ -374,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Set event listeners for Bottom Tab buttons
-  tabButtons.budget.addEventListener('click', () => navigateToSubPage(0));
+  tabButtons.water.addEventListener('click', () => navigateToSubPage(0));
   tabButtons.tracker.addEventListener('click', () => navigateToSubPage(1));
   tabButtons.completed.addEventListener('click', () => navigateToSubPage(2));
 
@@ -783,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==================== INITIAL STARTUP RENDERING ====================
   renderHomeNotes();
   renderCompletedNotes();
-  renderBudget();
+  renderWater();
   renderTracker();
 
 });

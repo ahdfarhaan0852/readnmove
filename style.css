@@ -196,13 +196,24 @@ body {
 
 .brand-title {
   font-family: var(--font-title);
-  font-size: 26px;
+  font-size: 32px; /* Enlarged brand title */
   font-weight: 800;
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #ffffff 30%, rgba(255,255,255,0.7) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 4px 12px rgba(10, 25, 47, 0.3);
+}
+
+.header-date {
+  font-size: 13px; /* Enlarged header date */
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  display: block;
+  font-family: var(--font-body);
+  text-shadow: 0 2px 4px rgba(10, 25, 47, 0.4);
 }
 
 #split-workspaces {
@@ -312,7 +323,7 @@ body {
 
 .workspace-header h2 {
   font-family: var(--font-title);
-  font-size: 19px;
+  font-size: 23px; /* Enlarged workspace h2 */
   font-weight: 700;
   text-transform: capitalize;
   letter-spacing: -0.3px;
@@ -320,7 +331,7 @@ body {
 }
 
 .workspace-subtitle {
-  font-size: 11px;
+  font-size: 13px; /* Enlarged workspace subtitle */
   font-weight: 500;
   display: block;
 }
@@ -434,7 +445,7 @@ body {
 /* Title and Body text inside Note Cards */
 .note-title {
   font-family: var(--font-title);
-  font-size: 14px;
+  font-size: 17px; /* Enlarged note card title */
   font-weight: 600;
   margin-bottom: 6px;
   line-height: 1.2;
@@ -442,7 +453,7 @@ body {
 
 .note-body {
   font-family: var(--font-handwritten);
-  font-size: 16px; /* slightly bigger since Shadows Into Light is a thin handwriting font */
+  font-size: 18px; /* Enlarged handwriting note card body */
   line-height: 1.3;
   word-break: break-word;
 }
@@ -536,7 +547,7 @@ body {
 /* Empty Workspace State text */
 .empty-state-text {
   text-align: center;
-  font-size: 12px;
+  font-size: 14px; /* Enlarged empty state text */
   padding: 40px 10px;
   opacity: 0.6;
 }
@@ -574,8 +585,8 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 110px;
-  height: 110px;
+  width: 125px; /* Enlarged Deadpool badge */
+  height: 125px;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -1262,18 +1273,18 @@ select option {
 
 /* ==================== REDESIGN CUSTOM OVERRIDES ==================== */
 
-/* Page Budget & Tracking Fonts (Lora) */
-#sub-page-budget, #sub-page-tracker {
+/* Page Water & Tracking Fonts (Lora) */
+#sub-page-water, #sub-page-tracker {
   font-family: var(--font-title) !important;
 }
 
-#sub-page-budget input, 
-#sub-page-budget select, 
-#sub-page-budget button,
-#sub-page-budget span, 
-#sub-page-budget p, 
-#sub-page-budget h3, 
-#sub-page-budget h4,
+#sub-page-water input, 
+#sub-page-water select, 
+#sub-page-water button,
+#sub-page-water span, 
+#sub-page-water p, 
+#sub-page-water h3, 
+#sub-page-water h4,
 #sub-page-tracker button, 
 #sub-page-tracker span, 
 #sub-page-tracker p,
@@ -1358,4 +1369,301 @@ select option {
 @keyframes randomFlyIn4 {
   from { opacity: 0; transform: translate(50px, -40px) rotate(12deg); }
   to { opacity: 1; }
+}
+
+/* ==================== WATER TRACKER GLASS CUP & WAVES ==================== */
+
+.water-summary-card {
+  align-items: center;
+  text-align: center;
+}
+
+.water-summary-card h3 {
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.water-visual-card {
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+}
+
+.water-glass-container {
+  width: 120px;
+  height: 180px;
+  border: 4px solid rgba(255, 255, 255, 0.45);
+  border-top: none;
+  border-radius: 0 0 28px 28px;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 12px 30px rgba(0, 0, 0, 0.15),
+    inset 0 -10px 20px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Glass top rim effect */
+.glass-rim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transform: translateY(-4px);
+  z-index: 5;
+}
+
+#water-glass-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%; /* Dynamic height calculated in JS */
+  background: rgba(92, 156, 255, 0.55); /* Translucent blue */
+  transition: height 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
+}
+
+/* Dynamic CSS Waves */
+.water-wave-front, .water-wave-back {
+  position: absolute;
+  width: 200%;
+  height: 20px;
+  top: -12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 C150,90 350,90 500,0 C650,-90 850,-90 1000,0 L1200,0 L1200,120 L0,120 Z' fill='%235C9CFF' opacity='0.75'/%3E%3C/svg%3E");
+  background-size: 120px 20px;
+  background-repeat: repeat-x;
+  transform: translateX(0);
+}
+
+.water-wave-front {
+  left: 0;
+  animation: waveMotion 3s linear infinite;
+  z-index: 3;
+}
+
+.water-wave-back {
+  left: -50px;
+  animation: waveMotionReverse 4.5s linear infinite;
+  opacity: 0.5;
+  filter: brightness(0.9);
+  z-index: 2;
+}
+
+@keyframes waveMotion {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-120px); }
+}
+
+@keyframes waveMotionReverse {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(120px); }
+}
+
+/* Water controls styling */
+.water-controls-card {
+  gap: 12px;
+}
+
+.water-btn-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.water-btn-row .btn-primary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  gap: 2px;
+  font-family: var(--font-title);
+}
+
+.btn-subtext {
+  font-size: 9px;
+  font-weight: 500;
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+/* ==================== LINE CHART INTERACTIVE SWITCHERS ==================== */
+
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.chart-toggle-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-input);
+  padding: 3px;
+  gap: 2px;
+}
+
+.chart-toggle-btn {
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chart-toggle-btn.active {
+  background: var(--color-highlight);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--color-highlight-glow);
+}
+
+/* SVG Line Chart Style */
+.activity-chart-container {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card);
+  padding: 10px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: visible;
+}
+
+/* SVG Elements styles */
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.chart-grid-text {
+  fill: rgba(255, 255, 255, 0.45);
+  font-size: 8px;
+  font-family: var(--font-body);
+  font-weight: bold;
+}
+
+.chart-line-stroke {
+  stroke: #78AFFF;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-line-fill {
+  fill: url(#chart-fill-gradient);
+}
+
+.chart-point-dot {
+  fill: #ffffff;
+  stroke: #5C9CFF;
+  stroke-width: 2.5;
+  cursor: pointer;
+  transition: r 0.2s, stroke-width 0.2s;
+}
+
+.chart-point-dot:hover {
+  r: 6.5;
+  stroke-width: 3.5;
+  stroke: #8FE3FF;
+}
+
+.chart-label-text {
+  fill: rgba(255, 255, 255, 0.45);
+  font-size: 8px;
+  font-family: var(--font-title);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Floating Tooltip styling */
+.chart-tooltip-bubble {
+  position: absolute;
+  background: rgba(10, 25, 47, 0.95);
+  border: 1px solid rgba(120, 175, 255, 0.4);
+  border-radius: 6px;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 8px;
+  pointer-events: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+  white-space: nowrap;
+  display: none;
+}
+
+/* Weekly breakdown card */
+.weekly-summary-card {
+  gap: 12px;
+}
+
+.weekly-list-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.weekly-progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weekly-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.weekly-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.weekly-percent {
+  font-size: 11px;
+  font-weight: 700;
+  color: #78AFFF;
+}
+
+.mini-bar-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5C9CFF 0%, #8FE3FF 100%);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }

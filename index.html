@@ -44,6 +44,7 @@
           <!-- Header Bar -->
           <header class="app-header">
             <h1 class="brand-title">rnm</h1>
+            <span id="realtime-date" class="header-date"></span>
           </header>
           
           <!-- Split Workspaces -->
@@ -98,79 +99,92 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
             </button>
-            <h2 id="sub-page-title">Budgeting</h2>
+            <h2 id="sub-page-title">Hidrasi Air</h2>
             <div style="width: 44px;"></div> <!-- Spacer for optical centering -->
           </header>
           
           <!-- Sub-page content slots -->
           <div id="sub-pages-scroller">
             
-            <!-- SUB-PAGE 1: BUDGETING -->
-            <article id="sub-page-budget" class="sub-page-content active">
-              
-              <!-- Total Balance Card -->
-              <section class="glass-card balance-card">
-                <span class="card-label">Sisa Anggaran</span>
-                <h3 id="budget-total-balance">Rp 0</h3>
-                <div class="balance-split">
-                  <div>
-                    <span class="split-label">Pemasukan</span>
-                    <span id="budget-income-total" class="split-value positive">+Rp 0</span>
-                  </div>
-                  <div class="divider-v"></div>
-                  <div>
-                    <span class="split-label">Pengeluaran</span>
-                    <span id="budget-expense-total" class="split-value negative">-Rp 0</span>
-                  </div>
-                </div>
-              </section>
-
-              <!-- Transaction Input -->
-              <section class="glass-card transaction-form">
-                <h4>Transaksi Baru</h4>
-                <div class="input-row">
-                  <input type="text" id="tx-description" placeholder="Nama pengeluaran / pemasukan..." maxlength="30">
-                </div>
-                <div class="input-row-half">
-                  <input type="number" id="tx-amount" placeholder="Jumlah (Rp)...">
-                  <select id="tx-type">
-                    <option value="expense">Pengeluaran</option>
-                    <option value="income">Pemasukan</option>
-                  </select>
-                </div>
-                <button id="btn-add-transaction" class="btn-primary interactive">Catat Transaksi</button>
-              </section>
-
-              <!-- Transactions History -->
-              <section class="glass-card transactions-history">
-                <h4>Riwayat Aliran Dana</h4>
-                <div id="transactions-list" class="transactions-list-scroll">
-                  <!-- Generated via JS -->
-                </div>
-              </section>
-              
-            </article>
-
-            <!-- SUB-PAGE 2: ACTIVITY TRACKING -->
-            <article id="sub-page-tracker" class="sub-page-content">
-              
-              <!-- Progress Habit Tracker Cards -->
-              <section class="glass-card tracking-summary">
-                <span class="card-label">Kebugaran & Fokus Hari Ini</span>
-                <h3 id="tracking-overall-score">0% Selesai</h3>
-                <p class="card-desc">Menjaga kebiasaan fisik dan mental tetap seimbang setiap hari.</p>
-              </section>
-
-              <!-- Habits Progress Bars List -->
-              <section class="glass-card habits-tracker-list">
-                <h4>Indikator Aktivitas</h4>
+              <!-- SUB-PAGE 1: WATER TRACKER -->
+              <article id="sub-page-water" class="sub-page-content active">
                 
-                <div id="habits-container">
-                  <!-- Generated via JS -->
-                </div>
-              </section>
-              
-            </article>
+                <!-- Water Progress Card -->
+                <section class="glass-card water-summary-card">
+                  <span class="card-label">Asupan Hidrasi Hari Ini</span>
+                  <h3 id="water-progress-text">0 / 2000 ml</h3>
+                  <p class="card-desc" id="water-percent-desc">Penuhi target air minum harian Anda untuk menjaga fokus fisik & mental.</p>
+                </section>
+  
+                <!-- Visual Interactive Glass Cup -->
+                <section class="glass-card water-visual-card">
+                  <div class="water-glass-container">
+                    <!-- Glass Rim / Reflections -->
+                    <div class="glass-rim"></div>
+                    <!-- Water Level Fill -->
+                    <div id="water-glass-fill">
+                      <!-- CSS Keyframe Wavy Water Animations -->
+                      <div class="water-wave-front"></div>
+                      <div class="water-wave-back"></div>
+                    </div>
+                  </div>
+                </section>
+  
+                <!-- Quick Add Buttons -->
+                <section class="glass-card water-controls-card">
+                  <div class="water-btn-row">
+                    <button id="btn-add-250" class="btn-primary interactive">
+                      <span>+ 250 ml</span>
+                      <span class="btn-subtext">Gelas</span>
+                    </button>
+                    <button id="btn-add-600" class="btn-primary interactive">
+                      <span>+ 600 ml</span>
+                      <span class="btn-subtext">Botol</span>
+                    </button>
+                  </div>
+                  <button id="btn-reset-water" class="btn-secondary interactive">Reset Progres</button>
+                </section>
+                
+              </article>
+
+              <!-- SUB-PAGE 2: ACTIVITY TRACKING -->
+              <article id="sub-page-tracker" class="sub-page-content">
+                
+                <!-- Progress Activity Summary Cards -->
+                <section class="glass-card tracking-summary">
+                  <span class="card-label">Kurva Keaktifan Catatan</span>
+                  <h3 id="tracking-overall-score">0 Catatan Selesai</h3>
+                  <p class="card-desc">Memantau penyelesaian catatan olah otak dan olahraga harian Anda.</p>
+                </section>
+  
+                <!-- Line Chart Section with Switcher -->
+                <section class="glass-card habits-tracker-list">
+                  <div class="chart-header-row">
+                    <h4>Tren Keaktifan</h4>
+                    <!-- Chart Timeframe Switcher Toggle -->
+                    <div class="chart-toggle-container">
+                      <button id="btn-toggle-weekly" class="chart-toggle-btn active interactive" aria-label="Grafik Mingguan">Mingguan</button>
+                      <button id="btn-toggle-monthly" class="chart-toggle-btn interactive" aria-label="Grafik Bulanan">Bulanan</button>
+                    </div>
+                  </div>
+                  
+                  <!-- SVG Responsive Line Chart Container -->
+                  <div class="activity-chart-container">
+                    <svg id="activity-svg" viewBox="0 0 300 150" width="100%" height="150">
+                      <!-- Elements generated dynamically via app.js -->
+                    </svg>
+                  </div>
+                </section>
+  
+                <!-- Weekly Distribution Card (shows up in Monthly view) -->
+                <section id="weekly-distribution-section" class="glass-card weekly-summary-card" style="display: none;">
+                  <h4>Rasio Keaktifan Mingguan</h4>
+                  <div id="weekly-percentages-list" class="weekly-list-scroller">
+                    <!-- Dynamic list generated via JS -->
+                  </div>
+                </section>
+                
+              </article>
 
             <!-- SUB-PAGE 3: COMPLETED NOTES -->
             <article id="sub-page-completed" class="sub-page-content">
@@ -230,12 +244,12 @@
 
         <!-- Bottom Floating Navigation Glass Bar (Global) -->
         <nav id="bottom-tab-bar" class="glass-bar">
-          <button id="tab-budget" class="tab-button interactive" aria-label="Menu Anggaran">
-            <!-- SVG Budget (Money Bag) -->
-            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          <button id="tab-water" class="tab-button interactive" aria-label="Menu Hidrasi Air">
+            <!-- SVG Water Drop -->
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/>
             </svg>
-            <span class="tab-label">Budget</span>
+            <span class="tab-label">Water</span>
           </button>
           
           <button id="tab-tracker" class="tab-button interactive" aria-label="Menu Pelacak Aktivitas">
