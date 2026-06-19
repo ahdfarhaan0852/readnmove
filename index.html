@@ -286,6 +286,14 @@
           .then(reg => console.log('Service Worker registered successfully.', reg))
           .catch(err => console.log('Service Worker registration failed.', err));
       });
+      // Force page reload on service worker controller update
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
   </script>
 
