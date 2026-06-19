@@ -17,6 +17,95 @@ document.addEventListener('DOMContentLoaded', () => {
     return d.toLocaleDateString();
   };
 
+  // ==================== WEB AUDIO API SOUND SYNTHESIZER ====================
+  let audioCtx = null;
+
+  const playMicroSound = (type) => {
+    try {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+        gainNode.gain.setValueAtTime(0.12, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } 
+      else if (type === 'bubble') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(650, now + 0.15);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } 
+      else if (type === 'complete') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.25);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+
+        const osc2 = audioCtx.createOscillator();
+        const gainNode2 = audioCtx.createGain();
+        osc2.connect(gainNode2);
+        gainNode2.connect(audioCtx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(783.99, now + 0.05);
+        gainNode2.gain.setValueAtTime(0.08, now + 0.05);
+        gainNode2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc2.start(now + 0.05);
+        osc2.stop(now + 0.3);
+      }
+    } catch (err) {
+      console.warn('AudioContext blocked or unsupported:', err);
+    }
+  };
+
+  // ==================== THEME MANAGEMENT ====================
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  const themeIconSvg = document.getElementById('theme-icon-svg');
+  
+  const moonIcon = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  const sunIcon = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="18.36" x2="5.64" y2="19.78"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line>`;
+
+  const applyTheme = (theme) => {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+      themeIconSvg.innerHTML = sunIcon;
+    } else {
+      document.body.classList.remove('light-theme');
+      themeIconSvg.innerHTML = moonIcon;
+    }
+  };
+
+  let currentTheme = localStorage.getItem('ds_theme') || 'dark';
+  applyTheme(currentTheme);
+
+  btnThemeToggle.addEventListener('click', () => {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ds_theme', currentTheme);
+    applyTheme(currentTheme);
+    playMicroSound('click');
+  });
+
   // ==================== STATE MANAGEMENT ====================
   let state = {
     mentalNotes: JSON.parse(localStorage.getItem('ds_mental_notes')) || [],
@@ -24,8 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
     completedNotes: JSON.parse(localStorage.getItem('ds_completed_notes')) || [],
     water: JSON.parse(localStorage.getItem('ds_water')) || {
       current: 0,
-      target: 2000
+      target: 2000,
+      customPreset: 500
     },
+    waterHistory: JSON.parse(localStorage.getItem('ds_water_history')) || {},
     currentNoteType: 'mental' // Tracks which workspace triggers the input modal
   };
 
@@ -38,6 +129,20 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('ds_physical_notes', JSON.stringify(state.physicalNotes));
     localStorage.setItem('ds_completed_notes', JSON.stringify(state.completedNotes));
     localStorage.setItem('ds_water', JSON.stringify(state.water));
+    localStorage.setItem('ds_water_history', JSON.stringify(state.waterHistory));
+    updateAppBadge();
+  };
+
+  // Helper to update PWA home screen app badge
+  const updateAppBadge = () => {
+    if ('setAppBadge' in navigator) {
+      const count = state.mentalNotes.length + state.physicalNotes.length;
+      if (count > 0) {
+        navigator.setAppBadge(count).catch(err => console.warn('App Badging failed:', err));
+      } else {
+        navigator.clearAppBadge().catch(err => console.warn('App Badging failed:', err));
+      }
+    }
   };
 
   // ==================== DOM ELEMENTS ====================
@@ -88,6 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const waterGlassFill = document.getElementById('water-glass-fill');
   const btnAdd250 = document.getElementById('btn-add-250');
   const btnAdd600 = document.getElementById('btn-add-600');
+  const btnAddCustom = document.getElementById('btn-add-custom');
+  const btnEditWaterTarget = document.getElementById('btn-edit-water-target');
   const btnResetWater = document.getElementById('btn-reset-water');
 
   // Chart Toggle Switchers
@@ -96,14 +203,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ==================== RENDERING LOGIC ====================
 
+  // ==================== RENDERING LOGIC ====================
+
+  const swapNotesInState = (type, idx1, idx2) => {
+    const list = type === 'mental' ? state.mentalNotes : state.physicalNotes;
+    if (idx1 >= 0 && idx1 < list.length && idx2 >= 0 && idx2 < list.length) {
+      const temp = list[idx1];
+      list[idx1] = list[idx2];
+      list[idx2] = temp;
+    }
+  };
+
+  const togglePinNote = (id, type) => {
+    const list = type === 'mental' ? state.mentalNotes : state.physicalNotes;
+    const note = list.find(n => n.id === id);
+    if (note) {
+      note.pinned = !note.pinned;
+      saveState();
+      renderHomeNotes();
+      playMicroSound('click');
+    }
+  };
+
   // 1. Render Left & Right Home Workspace Notes
   const renderHomeNotes = () => {
+    const searchMental = (document.getElementById('search-mental')?.value || '').toLowerCase().trim();
+    const searchPhysical = (document.getElementById('search-physical')?.value || '').toLowerCase().trim();
+
     // Render Mental Notes
     mentalNotesList.innerHTML = '';
-    if (state.mentalNotes.length === 0) {
+    let filteredMental = state.mentalNotes.filter(note => 
+      note.title.toLowerCase().includes(searchMental) || 
+      note.body.toLowerCase().includes(searchMental) ||
+      (note.tag && note.tag.toLowerCase().includes(searchMental))
+    );
+    // Sort pinned to top
+    filteredMental.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+    if (filteredMental.length === 0) {
       mentalNotesList.innerHTML = `<div class="empty-state-text">Catatan otak kosong. Buat ide baru!</div>`;
     } else {
-      state.mentalNotes.forEach(note => {
+      filteredMental.forEach(note => {
         const card = createNoteCard(note, 'mental');
         mentalNotesList.appendChild(card);
       });
@@ -111,10 +251,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render Physical Notes
     physicalNotesList.innerHTML = '';
-    if (state.physicalNotes.length === 0) {
+    let filteredPhysical = state.physicalNotes.filter(note => 
+      note.title.toLowerCase().includes(searchPhysical) || 
+      note.body.toLowerCase().includes(searchPhysical) ||
+      (note.tag && note.tag.toLowerCase().includes(searchPhysical))
+    );
+    // Sort pinned to top
+    filteredPhysical.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+    if (filteredPhysical.length === 0) {
       physicalNotesList.innerHTML = `<div class="empty-state-text">Catatan latihan kosong. Catat perkembangan olahraga Anda!</div>`;
     } else {
-      state.physicalNotes.forEach(note => {
+      filteredPhysical.forEach(note => {
         const card = createNoteCard(note, 'physical');
         physicalNotesList.appendChild(card);
       });
@@ -125,12 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const createNoteCard = (note, type) => {
     const card = document.createElement('div');
     card.className = 'note-item-card';
+    if (note.pinned) {
+      card.classList.add('pinned');
+    }
     card.setAttribute('data-id', note.id);
     
     card.innerHTML = `
-      <div class="note-title">${escapeHTML(note.title)}</div>
-      <div class="note-body">${escapeHTML(note.body)}</div>
+      <div class="note-card-content" style="cursor: pointer; width: 100%;">
+        <div class="note-title">${escapeHTML(note.title)}</div>
+        <div class="note-body">${escapeHTML(note.body)}</div>
+        ${note.tag ? `<div class="note-tag-badge">${escapeHTML(note.tag)}</div>` : ''}
+      </div>
       <div class="note-actions">
+        <button class="btn-card-action btn-pin ${note.pinned ? 'active' : ''} interactive" aria-label="Sematkan Catatan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v3.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24Z"></path>
+          </svg>
+        </button>
         <button class="btn-card-action btn-complete interactive" aria-label="Selesaikan Catatan">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
@@ -155,6 +315,92 @@ document.addEventListener('DOMContentLoaded', () => {
     card.querySelector('.btn-delete').addEventListener('click', (e) => {
       e.stopPropagation();
       deleteNote(note.id, type);
+    });
+
+    // Pin Action Button
+    card.querySelector('.btn-pin').addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePinNote(note.id, type);
+    });
+
+    // Edit note modal trigger on clicking note content
+    card.querySelector('.note-card-content').addEventListener('click', (e) => {
+      editNote(note, type);
+    });
+
+    // Drag and Drop (Pointer Events) for vertical sorting
+    let isDragging = false;
+    let startY = 0;
+    let currentY = 0;
+    let initialIndex = -1;
+    let siblings = [];
+    let listContainer = type === 'mental' ? mentalNotesList : physicalNotesList;
+
+    card.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.btn-card-action')) return;
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      isDragging = true;
+      startY = e.clientY;
+      card.classList.add('dragging');
+      card.setPointerCapture(e.pointerId);
+
+      const notes = type === 'mental' ? state.mentalNotes : state.physicalNotes;
+      initialIndex = notes.findIndex(n => n.id === note.id);
+
+      siblings = [...listContainer.querySelectorAll('.note-item-card:not(.dragging)')];
+      playMicroSound('click');
+    });
+
+    card.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      currentY = e.clientY;
+      const deltaY = currentY - startY;
+      card.style.transform = `translateY(${deltaY}px) scale(0.98)`;
+
+      const cardRect = card.getBoundingClientRect();
+      const cardCenterY = cardRect.top + cardRect.height / 2;
+
+      for (let i = 0; i < siblings.length; i++) {
+        const sib = siblings[i];
+        const sibRect = sib.getBoundingClientRect();
+        const sibCenterY = sibRect.top + sibRect.height / 2;
+
+        if (deltaY > 0 && cardCenterY > sibCenterY && card.nextElementSibling === sib) {
+          listContainer.insertBefore(sib, card);
+          swapNotesInState(type, initialIndex, initialIndex + 1);
+          initialIndex += 1;
+          siblings = [...listContainer.querySelectorAll('.note-item-card:not(.dragging)')];
+          break;
+        } else if (deltaY < 0 && cardCenterY < sibCenterY && card.previousElementSibling === sib) {
+          listContainer.insertBefore(card, sib);
+          swapNotesInState(type, initialIndex, initialIndex - 1);
+          initialIndex -= 1;
+          siblings = [...listContainer.querySelectorAll('.note-item-card:not(.dragging)')];
+          break;
+        }
+      }
+    });
+
+    card.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.classList.remove('dragging');
+      card.style.transform = '';
+      card.releasePointerCapture(e.pointerId);
+
+      saveState();
+      renderHomeNotes();
+      playMicroSound('click');
+    });
+
+    card.addEventListener('pointercancel', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.classList.remove('dragging');
+      card.style.transform = '';
+      card.releasePointerCapture(e.pointerId);
+      renderHomeNotes();
     });
 
     // Add visual interactive active states
@@ -210,7 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Render Water Hydration Tracker
   const renderWater = () => {
+    if (!state.water.customPreset) {
+      state.water.customPreset = 500;
+    }
+
     waterProgressText.innerText = `${state.water.current} / ${state.water.target} ml`;
+    document.getElementById('btn-add-custom-text').innerText = `+ ${state.water.customPreset} ml`;
     
     const percent = Math.min(Math.round((state.water.current / state.water.target) * 100), 100);
     
@@ -224,6 +475,139 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update liquid level container height
     waterGlassFill.style.height = `${percent}%`;
+
+    // Draw historical line chart for water
+    renderWaterHistoryChart();
+  };
+
+  const renderWaterHistoryChart = () => {
+    const svg = document.getElementById('water-history-svg');
+    if (!svg) return;
+
+    // 1. Generate past 7 days references
+    const days = [];
+    const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString();
+      let currentIntake = 0;
+      if (i === 0) {
+        currentIntake = state.water.current;
+      } else {
+        currentIntake = state.waterHistory[dateStr] || 0;
+      }
+
+      days.push({
+        dateStr,
+        dayLabel: dayNames[d.getDay()],
+        shortLabel: d.getDate() + '/' + (d.getMonth() + 1),
+        count: currentIntake
+      });
+    }
+
+    // 2. Compute SVG math
+    const intakes = days.map(d => d.count);
+    let maxVal = Math.max(...intakes, state.water.target);
+    if (maxVal === 0) maxVal = 2000;
+
+    const xPadding = 25;
+    const yPadding = 20;
+    const chartW = 300;
+    const chartH = 120;
+
+    const points = days.map((day, idx) => {
+      const x = xPadding + idx * ((chartW - 2 * xPadding) / 6);
+      const y = (chartH - yPadding) - (day.count / maxVal) * (chartH - 2 * yPadding);
+      return { x, y, day };
+    });
+
+    // 3. Clear SVG contents
+    const els = svg.querySelectorAll(':not(defs)');
+    els.forEach(el => el.remove());
+
+    // 4. Draw horizontal target line (as a dashed line)
+    const targetY = (chartH - yPadding) - (state.water.target / maxVal) * (chartH - 2 * yPadding);
+    const targetLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    targetLine.setAttribute('x1', xPadding);
+    targetLine.setAttribute('y1', targetY);
+    targetLine.setAttribute('x2', chartW - xPadding);
+    targetLine.setAttribute('y2', targetY);
+    targetLine.setAttribute('stroke', 'rgba(120, 175, 255, 0.4)');
+    targetLine.setAttribute('stroke-width', '1.5');
+    targetLine.setAttribute('stroke-dasharray', '4,4');
+    svg.appendChild(targetLine);
+
+    // Target label
+    const targetText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    targetText.setAttribute('x', chartW - xPadding);
+    targetText.setAttribute('y', targetY - 4);
+    targetText.setAttribute('text-anchor', 'end');
+    targetText.setAttribute('fill', 'rgba(120, 175, 255, 0.6)');
+    targetText.setAttribute('font-size', '7px');
+    targetText.setAttribute('font-weight', 'bold');
+    targetText.textContent = `Target: ${state.water.target} ml`;
+    svg.appendChild(targetText);
+
+    // 5. Draw path line stroke
+    let dStroke = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      dStroke += ` L ${points[i].x} ${points[i].y}`;
+    }
+    
+    // Gradient area path
+    let dFill = dStroke + ` L ${points[points.length - 1].x} ${chartH - yPadding} L ${points[0].x} ${chartH - yPadding} Z`;
+
+    const pathFill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathFill.setAttribute('d', dFill);
+    pathFill.setAttribute('fill', 'url(#chart-fill-gradient)');
+    svg.appendChild(pathFill);
+
+    const pathStroke = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pathStroke.setAttribute('d', dStroke);
+    pathStroke.setAttribute('stroke', '#78AFFF');
+    pathStroke.setAttribute('stroke-width', '2.5');
+    pathStroke.setAttribute('fill', 'none');
+    pathStroke.setAttribute('stroke-linecap', 'round');
+    pathStroke.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(pathStroke);
+
+    // 6. Draw dots & X labels
+    points.forEach((pt, idx) => {
+      // Circle
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pt.x);
+      circle.setAttribute('cy', pt.y);
+      circle.setAttribute('r', '4');
+      circle.setAttribute('fill', '#ffffff');
+      circle.setAttribute('stroke', '#5C9CFF');
+      circle.setAttribute('stroke-width', '2');
+      circle.setAttribute('cursor', 'pointer');
+      
+      circle.addEventListener('mouseenter', (e) => {
+        showChartTooltip(e, pt.day.shortLabel, `${pt.day.count} ml`);
+      });
+      circle.addEventListener('mousemove', (e) => {
+        moveChartTooltip(e);
+      });
+      circle.addEventListener('mouseleave', () => {
+        hideChartTooltip();
+      });
+
+      svg.appendChild(circle);
+
+      // Label X
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', pt.x);
+      text.setAttribute('y', chartH - 4);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('fill', 'rgba(255, 255, 255, 0.45)');
+      text.setAttribute('font-size', '8px');
+      text.setAttribute('font-family', 'var(--font-title)');
+      text.setAttribute('font-weight', '600');
+      text.textContent = pt.day.dayLabel;
+      svg.appendChild(text);
+    });
   };
 
   // Tooltip Logic for Line Chart
@@ -285,6 +669,174 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       listEl.appendChild(item);
     });
+  };
+
+  // ==================== ANALYTICS & GAMIFICATION PIPELINE ====================
+  const updateAnalytics = () => {
+    // 1. Calculate Balance Ratio
+    const completed = state.completedNotes;
+    const brainCount = completed.filter(n => n.type === 'brain').length;
+    const sportCount = completed.filter(n => n.type === 'sport').length;
+    const totalCount = brainCount + sportCount;
+
+    let balanceRatio = 50; 
+    let balanceTitle = "Seimbang";
+    let balanceDesc = "Buat catatan olah otak & olahraga harian Anda.";
+
+    if (totalCount > 0) {
+      balanceRatio = Math.round((brainCount / totalCount) * 100);
+      
+      if (balanceRatio > 55) {
+        balanceTitle = "Olah Otak Dominan";
+        balanceDesc = `Olah Otak ${balanceRatio}% vs Olahraga ${100 - balanceRatio}%. Perbanyak latihan fisik!`;
+      } else if (balanceRatio < 45) {
+        balanceTitle = "Olahraga Dominan";
+        balanceDesc = `Olahraga ${100 - balanceRatio}% vs Olah Otak ${balanceRatio}%. Ayo asah kreativitas otak Anda!`;
+      } else {
+        balanceTitle = "Keseimbangan Sempurna";
+        balanceDesc = "Hebat! Porsi latihan mental dan fisik Anda seimbang 50/50.";
+      }
+    }
+
+    const fillEl = document.getElementById('balance-circle-fill');
+    const percentEl = document.getElementById('balance-percent-text');
+    const titleEl = document.getElementById('balance-title-text');
+    const descEl = document.getElementById('balance-desc-text');
+    if (fillEl) {
+      fillEl.setAttribute('stroke-dasharray', `${balanceRatio}, 100`);
+      if (balanceRatio >= 45 && balanceRatio <= 55) {
+        fillEl.setAttribute('stroke', '#82C99B'); 
+      } else {
+        fillEl.setAttribute('stroke', '#007AFF'); 
+      }
+    }
+    if (percentEl) percentEl.innerText = `${balanceRatio}%`;
+    if (titleEl) titleEl.innerText = balanceTitle;
+    if (descEl) descEl.innerText = balanceDesc;
+
+    // 2. Calculate Daily Streak
+    let currentStreak = 0;
+    
+    const isDayActive = (date) => {
+      const dateStr = date.toLocaleDateString();
+      let waterMet = false;
+      if (dateStr === new Date().toLocaleDateString()) {
+        waterMet = state.water.current >= state.water.target;
+      } else {
+        waterMet = (state.waterHistory[dateStr] || 0) >= state.water.target;
+      }
+      const noteMet = state.completedNotes.some(n => n.date === dateStr);
+      return waterMet && noteMet;
+    };
+
+    let checkDate = new Date();
+    const todayActive = isDayActive(checkDate);
+    if (todayActive) {
+      currentStreak = 1;
+      checkDate.setDate(checkDate.getDate() - 1);
+      while (isDayActive(checkDate)) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+    } else {
+      checkDate.setDate(checkDate.getDate() - 1);
+      if (isDayActive(checkDate)) {
+        currentStreak = 1;
+        checkDate.setDate(checkDate.getDate() - 1);
+        while (isDayActive(checkDate)) {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+      }
+    }
+
+    const bestStreak = Math.max(currentStreak, parseInt(localStorage.getItem('ds_best_streak') || '0'));
+    localStorage.setItem('ds_best_streak', bestStreak.toString());
+
+    const streakEl = document.getElementById('streak-score-text');
+    if (streakEl) {
+      streakEl.innerText = `${currentStreak} Hari Beruntun (Rekor: ${bestStreak})`;
+    }
+
+    // 3. Unlock Badges/Achievements
+    const badges = {
+      hydration: currentStreak >= 3,
+      thinker: brainCount >= 5,
+      beast: sportCount >= 5,
+      balance: totalCount >= 4 && balanceRatio >= 45 && balanceRatio <= 55
+    };
+
+    Object.keys(badges).forEach(key => {
+      const el = document.getElementById(`badge-${key}`);
+      if (el) {
+        if (badges[key]) {
+          el.classList.remove('locked');
+          el.classList.add('unlocked');
+          el.querySelector('.badge-icon').style.filter = 'none';
+          el.querySelector('.badge-icon').style.opacity = '1';
+        } else {
+          el.classList.remove('unlocked');
+          el.classList.add('locked');
+          el.querySelector('.badge-icon').style.filter = 'grayscale(1)';
+          el.querySelector('.badge-icon').style.opacity = '0.4';
+        }
+      }
+    });
+
+    // 4. Calculate Weekly Stats Details
+    let waterSum = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString();
+      if (i === 0) {
+        waterSum += state.water.current;
+      } else {
+        waterSum += state.waterHistory[dateStr] || 0;
+      }
+    }
+    const avgWater = Math.round(waterSum / 7);
+
+    const dayCounts = { 'Min': 0, 'Sen': 0, 'Sel': 0, 'Rab': 0, 'Kam': 0, 'Jum': 0, 'Sab': 0 };
+    const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    state.completedNotes.forEach(note => {
+      // Safely parse date and increment day counts
+      const parts = note.date.split('/');
+      let d = new Date(note.date);
+      if (parts.length === 3) {
+        // Handle format d/m/y correctly if construction fails
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const year = parseInt(parts[2]);
+        d = new Date(year, month, day);
+      }
+      if (!isNaN(d.getTime())) {
+        const dayLabel = dayNames[d.getDay()];
+        dayCounts[dayLabel] = (dayCounts[dayLabel] || 0) + 1;
+      }
+    });
+    let activeDay = "Min";
+    let maxDayCount = -1;
+    Object.keys(dayCounts).forEach(day => {
+      if (dayCounts[day] > maxDayCount) {
+        maxDayCount = dayCounts[day];
+        activeDay = day;
+      }
+    });
+
+    let dominantType = "Seimbang";
+    if (brainCount > sportCount) {
+      dominantType = "Olah Otak 🧠";
+    } else if (sportCount > brainCount) {
+      dominantType = "Olahraga 🏃";
+    }
+
+    const avgWaterEl = document.getElementById('stat-avg-water');
+    const activeDayEl = document.getElementById('stat-active-day');
+    const dominantTypeEl = document.getElementById('stat-dominant-type');
+    if (avgWaterEl) avgWaterEl.innerText = `${avgWater} ml`;
+    if (activeDayEl) activeDayEl.innerText = activeDay;
+    if (dominantTypeEl) dominantTypeEl.innerText = dominantType;
   };
 
   // 4. Render SVG Line Chart (7-Day / 30-Day Note Activity History)
@@ -443,6 +995,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeChartView === 'monthly') {
       renderWeeklyBreakdown(days);
     }
+
+    // Update circular gauge, streaks, achievements, and weekly stats
+    updateAnalytics();
   };
 
   // ==================== APP FUNCTIONS ====================
@@ -486,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
     renderWater();
     triggerShimmer(document.querySelector('.water-summary-card'));
+    playMicroSound('bubble');
   });
 
   btnAdd600.addEventListener('click', () => {
@@ -493,12 +1049,44 @@ document.addEventListener('DOMContentLoaded', () => {
     saveState();
     renderWater();
     triggerShimmer(document.querySelector('.water-summary-card'));
+    playMicroSound('bubble');
+  });
+
+  btnAddCustom.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-subtext') || e.target.innerText.includes('⚙️')) {
+      const newPreset = prompt("Masukkan ukuran wadah kustom Anda (ml):", state.water.customPreset);
+      const val = parseInt(newPreset);
+      if (!isNaN(val) && val > 0 && val <= 2000) {
+        state.water.customPreset = val;
+        saveState();
+        renderWater();
+        playMicroSound('click');
+      }
+    } else {
+      state.water.current = Math.min(state.water.current + state.water.customPreset, 5000);
+      saveState();
+      renderWater();
+      triggerShimmer(document.querySelector('.water-summary-card'));
+      playMicroSound('bubble');
+    }
+  });
+
+  btnEditWaterTarget.addEventListener('click', () => {
+    const newTarget = prompt("Masukkan target air minum harian Anda (ml):", state.water.target);
+    const val = parseInt(newTarget);
+    if (!isNaN(val) && val >= 1000 && val <= 5000) {
+      state.water.target = val;
+      saveState();
+      renderWater();
+      playMicroSound('click');
+    }
   });
 
   btnResetWater.addEventListener('click', () => {
     state.water.current = 0;
     saveState();
     renderWater();
+    playMicroSound('click');
   });
 
   // Chart Timeframe Switchers Toggle Listeners
@@ -570,6 +1158,102 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCompletedNotes();
   });
 
+  // ==================== BACKUP & RESTORE DATA LOGIC ====================
+  const btnExportData = document.getElementById('btn-export-data');
+  const btnImportData = document.getElementById('btn-import-data');
+  const importFileInput = document.getElementById('import-file-input');
+
+  const exportData = () => {
+    const backupObj = {
+      app: 'dualsphere-notes',
+      version: 'v4',
+      timestamp: Date.now(),
+      theme: localStorage.getItem('ds_theme') || 'dark',
+      bestStreak: parseInt(localStorage.getItem('ds_best_streak') || '0', 10),
+      state: state
+    };
+    
+    try {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      
+      const d = new Date();
+      const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      downloadAnchor.setAttribute("download", `rnm_backup_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      
+      playMicroSound('complete');
+    } catch (err) {
+      console.error('Backup export failed:', err);
+      alert('Gagal mengekspor file cadangan.');
+    }
+  };
+
+  const importData = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const backup = JSON.parse(e.target.result);
+        if (backup.app !== 'dualsphere-notes' || !backup.state) {
+          alert('Format file cadangan tidak valid.');
+          return;
+        }
+        
+        // Load into State
+        state.mentalNotes = backup.state.mentalNotes || [];
+        state.physicalNotes = backup.state.physicalNotes || [];
+        state.completedNotes = backup.state.completedNotes || [];
+        state.water = backup.state.water || { current: 0, target: 2000, customPreset: 500 };
+        state.waterHistory = backup.state.waterHistory || {};
+        
+        // Load additional configurations
+        currentTheme = backup.theme || 'dark';
+        localStorage.setItem('ds_theme', currentTheme);
+        localStorage.setItem('ds_best_streak', (backup.bestStreak || 0).toString());
+        
+        saveState();
+        
+        // Re-render whole application state
+        applyTheme(currentTheme);
+        renderHomeNotes();
+        renderCompletedNotes();
+        renderWater();
+        renderTracker();
+        updateAppBadge();
+        
+        playMicroSound('complete');
+        alert('Data berhasil dipulihkan!');
+      } catch (err) {
+        console.error('Error parsing JSON backup file:', err);
+        alert('Gagal membaca file cadangan. Pastikan file valid.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  if (btnExportData && btnImportData && importFileInput) {
+    btnExportData.addEventListener('click', () => {
+      exportData();
+    });
+    
+    btnImportData.addEventListener('click', () => {
+      importFileInput.click();
+      playMicroSound('click');
+    });
+    
+    importFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importData(file);
+      }
+      importFileInput.value = ''; // Reset file input
+    });
+  }
+
 
 
   // ==================== SUB-PAGES SWIPE BACK GESTURES ====================
@@ -618,19 +1302,63 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ==================== MODAL DIALOG NOTE CREATION ====================
-  const openNoteModal = () => {
-    // Default choice is mental (Olah Otak)
-    state.currentNoteType = 'mental';
-    btnSelectMental.classList.add('active');
-    btnSelectPhysical.classList.remove('active');
-    modalTitle.innerText = 'Catatan Baru';
-    noteInputTitle.value = '';
-    noteInputBody.value = '';
+  // ==================== MODAL DIALOG NOTE CREATION & EDITS ====================
+  // Selected tag state
+  state.selectedTag = "#jurnal"; 
+  state.editingNoteId = null; 
+
+  const tagPills = document.querySelectorAll('.btn-tag-pill');
+  tagPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      tagPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      state.selectedTag = pill.getAttribute('data-tag');
+      playMicroSound('click');
+    });
+  });
+
+  const openNoteModal = (isEdit = false) => {
+    if (!isEdit) {
+      state.editingNoteId = null;
+      modalTitle.innerText = 'Catatan Baru';
+      noteInputTitle.value = '';
+      noteInputBody.value = '';
+      state.selectedTag = "#jurnal";
+      tagPills.forEach(p => {
+        if (p.getAttribute('data-tag') === '#jurnal') p.classList.add('active');
+        else p.classList.remove('active');
+      });
+    }
     noteModal.showModal();
+  };
+
+  const editNote = (note, type) => {
+    state.editingNoteId = note.id;
+    state.currentNoteType = type;
+    modalTitle.innerText = 'Edit Catatan';
+    noteInputTitle.value = note.title;
+    noteInputBody.value = note.body;
+    
+    if (type === 'mental') {
+      btnSelectMental.classList.add('active');
+      btnSelectPhysical.classList.remove('active');
+    } else {
+      btnSelectPhysical.classList.add('active');
+      btnSelectMental.classList.remove('active');
+    }
+
+    state.selectedTag = note.tag || "#jurnal";
+    tagPills.forEach(p => {
+      if (p.getAttribute('data-tag') === state.selectedTag) p.classList.add('active');
+      else p.classList.remove('active');
+    });
+
+    openNoteModal(true);
   };
 
   const closeNoteModal = () => {
     noteModal.close();
+    playMicroSound('click');
   };
 
   // Category Selector toggle actions inside Modal
@@ -638,12 +1366,14 @@ document.addEventListener('DOMContentLoaded', () => {
     state.currentNoteType = 'mental';
     btnSelectMental.classList.add('active');
     btnSelectPhysical.classList.remove('active');
+    playMicroSound('click');
   });
 
   btnSelectPhysical.addEventListener('click', () => {
     state.currentNoteType = 'physical';
     btnSelectPhysical.classList.add('active');
     btnSelectMental.classList.remove('active');
+    playMicroSound('click');
   });
 
   document.getElementById('btn-modal-cancel').addEventListener('click', closeNoteModal);
@@ -657,23 +1387,45 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const newNote = {
-      id: 'note-' + Date.now(),
-      title: title,
-      body: body,
-      date: new Date().toLocaleDateString()
-    };
-
-    if (state.currentNoteType === 'mental') {
-      state.mentalNotes.push(newNote);
+    if (state.editingNoteId) {
+      // Edit mode
+      const type = state.currentNoteType;
+      const list = type === 'mental' ? state.mentalNotes : state.physicalNotes;
+      const note = list.find(n => n.id === state.editingNoteId);
+      if (note) {
+        note.title = title;
+        note.body = body;
+        note.tag = state.selectedTag;
+      }
+      state.editingNoteId = null;
+      playMicroSound('complete');
     } else {
-      state.physicalNotes.push(newNote);
+      // Create mode
+      const newNote = {
+        id: 'note-' + Date.now(),
+        title: title,
+        body: body,
+        tag: state.selectedTag,
+        pinned: false,
+        date: new Date().toLocaleDateString()
+      };
+
+      if (state.currentNoteType === 'mental') {
+        state.mentalNotes.push(newNote);
+      } else {
+        state.physicalNotes.push(newNote);
+      }
+      playMicroSound('complete');
     }
 
     saveState();
     renderHomeNotes();
-    closeNoteModal();
+    noteModal.close();
   });
+
+  // Bind Search input event listeners to dynamically filter notes
+  document.getElementById('search-mental').addEventListener('input', renderHomeNotes);
+  document.getElementById('search-physical').addEventListener('input', renderHomeNotes);
 
   // ==================== MICRO-INTERACTION GLOW/SCALE ====================
 
@@ -954,10 +1706,25 @@ document.addEventListener('DOMContentLoaded', () => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
+  const checkWaterDayRollover = () => {
+    const today = new Date().toLocaleDateString();
+    const lastActiveDate = localStorage.getItem('ds_water_last_date');
+    if (lastActiveDate !== today) {
+      if (lastActiveDate && state.water.current > 0) {
+        state.waterHistory[lastActiveDate] = state.water.current;
+      }
+      state.water.current = 0;
+      localStorage.setItem('ds_water_last_date', today);
+      saveState();
+    }
+  };
+
   // ==================== INITIAL STARTUP RENDERING ====================
+  checkWaterDayRollover();
   renderHomeNotes();
   renderCompletedNotes();
   renderWater();
   renderTracker();
+  updateAppBadge();
 
 });
